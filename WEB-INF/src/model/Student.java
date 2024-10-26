@@ -1,6 +1,8 @@
 package model;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -8,28 +10,33 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 
 @NamedQueries({
-    @NamedQuery(name = "Student.findByName", query = "SELECT s FROM Student s WHERE s.studentNumber = :studentNumber")
+        @NamedQuery(name = "Student.findByName", query = "SELECT s FROM Student s WHERE s.studentNumber = :studentNumber")
 })
-
 
 @XmlRootElement(name = "student")
 @Entity
 public class Student {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
 
     private String name;
     private String studentNumber;
     private String phoneNumber;
     private String address;
     private String courseCode;
+
+    @OneToOne
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
     private Loan loan;
 
-	public Student(String name, String studentNumber, String phoneNumber, String address, String courseCode, Loan loan) {
+    public Student(String name, String studentNumber, String phoneNumber, String address, String courseCode,
+            Loan loan) {
         this.name = name;
         this.studentNumber = studentNumber;
         this.phoneNumber = phoneNumber;
@@ -38,19 +45,18 @@ public class Student {
         this.loan = loan;
     }
 
-	public Student() {
+    public Student() {
 
-	}
+    }
 
     @XmlElement
-	public int getId() {
-		return id;
-	}
+    public int getId() {
+        return id;
+    }
 
-	public void setId(int id) {
-		this.id = id;
-	}
-
+    public void setId(int id) {
+        this.id = id;
+    }
 
     @XmlElement
     public String getName() {
@@ -107,7 +113,8 @@ public class Student {
     }
 
     public String toString() {
-        return "Student [name=" + name + ", studentNumber=" + studentNumber + ", phoneNumber=" + phoneNumber + ", address=" + address + ", courseCode=" + courseCode + ", loan=" + loan + "]";
+        return "Student [name=" + name + ", studentNumber=" + studentNumber + ", phoneNumber=" + phoneNumber
+                + ", address=" + address + ", courseCode=" + courseCode + ", loan=" + loan + "]";
     }
 
 }

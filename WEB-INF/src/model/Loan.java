@@ -12,48 +12,45 @@ import javax.persistence.OneToMany;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-
 @XmlRootElement(name = "loan")
 @Entity
 public class Loan {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
 
-    private int amount;
+    private double amount;
     private String description;
 
-	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
-	private List<LoanDeposit> loanDeposits;
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    private List<LoanDeposit> loanDeposits;
 
-	public Loan(int amount, String description, List<LoanDeposit> loanDeposits) {
+    public Loan(double amount, String description, List<LoanDeposit> loanDeposits) {
         this.amount = amount;
         this.description = description;
         this.loanDeposits = loanDeposits;
     }
 
-	public Loan() {
+    public Loan() {
 
-	}
-
-
-    @XmlElement
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
+    }
 
     @XmlElement
-    public int getAmount() {
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    @XmlElement
+    public double getAmount() {
         return amount;
     }
 
-    public void setAmount(int amount) {
+    public void setAmount(double amount) {
         this.amount = amount;
     }
 

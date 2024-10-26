@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
 
-@XmlRootElement(name = "loandeposits")
+@XmlRootElement(name = "loandeposit")
 @Entity
 public class LoanDeposit {
 
@@ -16,10 +16,10 @@ public class LoanDeposit {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
 
-	private String amount;
+	private double amount;
 	private String date;
 
-	public LoanDeposit(String amount, String date) {
+	public LoanDeposit(double amount, String date) {
 		this.amount = amount;
 		this.date = date;
 	}
@@ -39,11 +39,11 @@ public class LoanDeposit {
 
 
 	@XmlElement
-	public String getAmount() {
+	public double getAmount() {
 		return amount;
 	}
 
-	public void setAmount(String amount) {
+	public void setAmount(double amount) {
 		this.amount = amount;
 	}
 
