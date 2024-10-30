@@ -2,6 +2,7 @@ package dao;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 
 import model.CollegeCreditUnion;
@@ -38,12 +39,14 @@ public class CollegeCreditUnionDAO {
         return updatedCollegeCreditUnion;
     }
 
-    public CollegeCreditUnion getCollegeCreditUnion(){
+    public CollegeCreditUnion getCollegeCreditUnion() {
         EntityManager em = emf.createEntityManager();
         CollegeCreditUnion collegeCreditUnion = null;
         try {
             collegeCreditUnion = (CollegeCreditUnion) em.createNamedQuery("CollegeCreditUnion.findAll")
                     .getSingleResult();
+        } catch (NoResultException e) {
+            // No college found with the given student number
         } finally {
             em.close();
         }

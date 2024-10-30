@@ -24,14 +24,18 @@ public class CollegeCreditUnionService {
     private static CollegeCreditUnion collegeCreditUnion = new CollegeCreditUnion();
 
     static {
-        CollegeCreditUnionDAO collegeCreditUnionDAO = new CollegeCreditUnionDAO();
-        collegeCreditUnion = collegeCreditUnionDAO.getCollegeCreditUnion();
-        if (collegeCreditUnion == null) {
-            collegeCreditUnion = new CollegeCreditUnion();
-
+        try {
+            CollegeCreditUnionDAO collegeCreditUnionDAO = new CollegeCreditUnionDAO();
+            collegeCreditUnion = collegeCreditUnionDAO.getCollegeCreditUnion();
+            if (collegeCreditUnion == null) {
+                collegeCreditUnion = new CollegeCreditUnion();
+                collegeCreditUnion.setStudents(new ArrayList<Student>());
+                collegeCreditUnionDAO.persist(collegeCreditUnion);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ExceptionInInitializerError(e);
         }
-        collegeCreditUnion.setStudents(new ArrayList<Student>());
-        collegeCreditUnionDAO.persist(collegeCreditUnion);
     }
 
     @GET
