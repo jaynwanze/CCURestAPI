@@ -5,6 +5,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
+import javax.persistence.NoResultException;
 
 import model.Student;
 
@@ -43,10 +44,16 @@ public class StudentDAO {
 
 	public Student getStudentByStudentNumber(String studentNumber) {
 		EntityManager em = emf.createEntityManager();
-		Student student = (Student) em.createNamedQuery("Student.findByStudentNumber").setParameter("studentNumber", studentNumber).getSingleResult();
-		em.close();
-		//Do whatever you want with the subscriber(s) with that username
-		//Here we just return the first one
+		Student student = null;
+		try {
+			student = (Student) em.createNamedQuery("Student.findByStudentNumber")
+					.setParameter("studentNumber", studentNumber)
+					.getSingleResult();
+		} catch (NoResultException e) {
+			// No student found with the given student number
+		} finally {
+			em.close();
+		}
 		return student;
 	}
 

@@ -37,4 +37,16 @@ public class CollegeCreditUnionDAO {
         em.close();
         return updatedCollegeCreditUnion;
     }
+
+    public CollegeCreditUnion getCollegeCreditUnion(){
+        EntityManager em = emf.createEntityManager();
+        CollegeCreditUnion collegeCreditUnion = null;
+        try {
+            collegeCreditUnion = (CollegeCreditUnion) em.createNamedQuery("CollegeCreditUnion.findAll")
+                    .getSingleResult();
+        } finally {
+            em.close();
+        }
+        return collegeCreditUnion;
+    }
 }

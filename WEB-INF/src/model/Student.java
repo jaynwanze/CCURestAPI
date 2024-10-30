@@ -14,7 +14,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
 @NamedQueries({
-        @NamedQuery(name = "Student.findByName", query = "SELECT s FROM Student s WHERE s.studentNumber = :studentNumber")
+        @NamedQuery(name = "Student.findByStudentNumber", query = "SELECT s FROM Student s WHERE s.studentNumber = :studentNumber")
 })
 
 @XmlRootElement(name = "student")
