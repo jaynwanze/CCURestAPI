@@ -23,7 +23,7 @@ public class Loan {
     private double amount;
     private String description;
 
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.REMOVE)
+    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LoanDeposit> loanDeposits;
 
     public Loan(double amount, String description, List<LoanDeposit> loanDeposits) {
