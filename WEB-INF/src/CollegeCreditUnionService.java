@@ -15,9 +15,29 @@ import model.Student;
 import dao.LoanDAO;
 import dao.LoanDepositDAO;
 import dao.StudentDAO;
+import dao.CollegeCreditUnionDAO;
+import model.CollegeCreditUnion;
 
 @Path("/collegecreditunionservice")
 public class CollegeCreditUnionService {
+
+    private static CollegeCreditUnion collegeCreditUnion;
+
+    static {
+        try {
+            CollegeCreditUnionDAO collegeCreditUnionDAO = new CollegeCreditUnionDAO();
+            collegeCreditUnion = collegeCreditUnionDAO.getCollegeCreditUnion();
+            if (collegeCreditUnion == null) {
+                collegeCreditUnion = new CollegeCreditUnion();
+                collegeCreditUnion.setStudents(new ArrayList<Student>());
+                collegeCreditUnionDAO.persist(collegeCreditUnion);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
     @POST
     @Path("/newStudent")
     @Consumes("application/json")
@@ -25,13 +45,18 @@ public class CollegeCreditUnionService {
     public String addStudentToDBJSON(Student student) {
         // do unique validation
         StudentDAO studentDAO = new StudentDAO();
+        CollegeCreditUnionDAO collegeCreditUnionDAO = new CollegeCreditUnionDAO();
         Student studentExists = studentDAO.getStudentByStudentNumber(student.getStudentNumber());
         if (studentExists != null) {
             return "Student with student number " + student.getStudentNumber() + " already exists";
         }
-        // persist student
+        // persist student and update college credit union
         studentDAO.persist(student);
-        return "Student added to DB from JSON Param " + student.getName();
+        collegeCreditUnion.getStudents().add(student);
+        collegeCreditUnion = collegeCreditUnionDAO.merge(collegeCreditUnion);
+        return "Student " + student.getName() + " with student number " + student.getStudentNumber()
+                + " has been created" +
+                "\nStudent Details: " + student.toString();
     }
 
     @DELETE
@@ -40,14 +65,21 @@ public class CollegeCreditUnionService {
     public String deleteStudent(@PathParam("studentNumber") String studentNumber) {
         // get student
         StudentDAO studentDAO = new StudentDAO();
+        CollegeCreditUnionDAO collegeCreditUnionDAO = new CollegeCreditUnionDAO();
         Student student = studentDAO.getStudentByStudentNumber(studentNumber);
-        if (student == null) {
+        if (student == null || collegeCreditUnion.getStudents() == null) {
             return "Student with student number " + studentNumber + " does not exist";
         } else if (student.getLoan() != null) {
-            return "Cannot delete student with student number " + studentNumber + " while still has a loan, ";
+            return "Cannot delete student with student number " + studentNumber + " while still has a loan";
         }
-
-        // remove student
+        // remove student and update college credit union
+        for (int i = 0; i < collegeCreditUnion.getStudents().size(); i++) {
+            if (collegeCreditUnion.getStudents().get(i).getStudentNumber().equals(studentNumber)) {
+                collegeCreditUnion.getStudents().remove(i);
+                break;
+            }
+        }
+        collegeCreditUnion = collegeCreditUnionDAO.merge(collegeCreditUnion);
         studentDAO.remove(student);
 
         return "Student with student number " + studentNumber + " has been deleted";
@@ -80,12 +112,22 @@ public class CollegeCreditUnionService {
             return "Student with student number " + studentNumber + " already has a loan";
         }
 
-        // Update student with new loan within db
+        // DAO Variables
         LoanDAO loanDao = new LoanDAO();
+
+        // Update student with bew loan within db
         loan.setLoanDeposits(new ArrayList<LoanDeposit>());
         loanDao.persist(loan);
         student.setLoan(loan);
         studentDAO.merge(student);
+
+        // Update student with loan within code
+        for (int i = 0; i < collegeCreditUnion.getStudents().size(); i++) {
+            if (collegeCreditUnion.getStudents().get(i).getStudentNumber().equals(studentNumber)) {
+                collegeCreditUnion.getStudents().get(i).setLoan(loan);
+                break;
+            }
+        }
 
         return "Loan added to student " + student.getName() + " with student number " + student.getStudentNumber()
                 + "\nLoan Details:" + student.getLoan().toString();
@@ -98,10 +140,8 @@ public class CollegeCreditUnionService {
         // get student
         StudentDAO studentDao = new StudentDAO();
         Student student = studentDao.getStudentByStudentNumber(studentNumber);
-        if (student == null) {
-            return "Student with student number " + studentNumber + " does not exist";
-        } else if (student.getLoan() == null) {
-            return "Student with student number " + studentNumber + " does not have a loan";
+        if (student == null || student.getLoan() == null) {
+            return "Student with student number " + studentNumber + " does not exist or does not have a loan";
         }
 
         // Variables
@@ -136,6 +176,7 @@ public class CollegeCreditUnionService {
         }
         // Variables
         Loan loan = student.getLoan();
+        double loanAmount = student.getLoan().getAmount();
 
         // Calculate total loan deposits
         double totalLoanDeposits = 0;
@@ -145,18 +186,35 @@ public class CollegeCreditUnionService {
             }
         }
 
-        if (totalLoanDeposits == student.getLoan().getAmount()) {
+        // Check if total loan deposits is greater than 0
+        if (totalLoanDeposits < loanAmount) {
+            return "Balance has't been paid off!\nTotal loan deposits must be equal to loan amount.\n"
+                    + "Loan amount: " + loanAmount + "\nTotal loan deposits: "
+                    + totalLoanDeposits + "\nBalance remaining: " + (loanAmount - totalLoanDeposits);
+        } // Check if total loan deposits is equal to loan amount and remove loan
+        else if (totalLoanDeposits == loanAmount) {
+            // Dao Variables
+            LoanDAO loanDao = new LoanDAO();
+
+            // Remove student loan from db
+            student.setLoan(null);
+            studentDao.merge(student);
+            loanDao.remove(loan);
+
+            // Remove student loan within code
+            for (int i = 0; i < collegeCreditUnion.getStudents().size(); i++) {
+                if (collegeCreditUnion.getStudents().get(i).getStudentNumber().equals(studentNumber)) {
+                    collegeCreditUnion.getStudents().get(i).setLoan(null);
+                    break;
+                }
+            }
             return "Loan has already fully paid by student: " + student.getName()
                     + " with student number " + student.getStudentNumber()
-                    + "\nYou are now eligible to remove loan from the system!";
+                    + "\nRemoving loan from the system!";
         }
-        // Remove student loan from db
-        student.setLoan(null);
-        studentDao.merge(student);
-        LoanDAO loanDao = new LoanDAO();
-        loanDao.remove(loan);
+        // return loan details
+        return "Error performing operation to delete loan";
 
-        return "Loan removed from student " + student.getName() + " with student number " + student.getStudentNumber();
     }
 
     @POST
@@ -175,10 +233,10 @@ public class CollegeCreditUnionService {
         } else if (amount <= 0) {
             return "Amount must be greater than 0";
         }
-
         // Variables
         LoanDepositDAO loanDepositDAO = new LoanDepositDAO();
         Loan loan = student.getLoan();
+        double loanAmount = student.getLoan().getAmount();
 
         // calculate total loan deposits
         double totalLoanDeposits = 0;
@@ -187,17 +245,17 @@ public class CollegeCreditUnionService {
                 totalLoanDeposits += ld.getAmount();
             }
         }
-
-        // check if total loan deposits + amount is greater than loan amount
-        if (totalLoanDeposits + amount > student.getLoan().getAmount()) {
-            return "Total loan deposits must be less than or equal to loan amount.\n"
-                    + "Loan amount: " + loan.getAmount() + "Total loan deposits: "
-                    + totalLoanDeposits + " Balance remaining: " + (loan.getAmount() - totalLoanDeposits);
-        } // check if total loan deposits + amount is equal to loan amount and remove loan
-        else if (totalLoanDeposits + amount == student.getLoan().getAmount()) {
-            return "Loan has already fully paid by student:" + student.getName()
+        // check if total loan deposits + amount is equal to loan amount and remove loan
+        if (totalLoanDeposits == loanAmount) {
+            return "Loan has already fully paid by student: " + student.getName()
                     + " with student number " + student.getStudentNumber()
                     + "\nYou are now eligible to remove loan from the system!";
+        }
+        // check if total loan deposits + amount is greater balanace remaining
+        else if (totalLoanDeposits + amount > loanAmount) {
+            return "Amount cannot be more than balance remaining.\n"
+                    + "Loan amount: " + loan.getAmount() + "\nTotal loan deposits: "
+                    + totalLoanDeposits + "\nBalance remaining: " + (loanAmount - totalLoanDeposits);
         }
 
         // Add loan deposit to relavent loan in db
@@ -206,10 +264,27 @@ public class CollegeCreditUnionService {
         LoanDAO loanDAO = new LoanDAO();
         loanDAO.merge(loan);
 
-        // return success message
-        return "Loan Deposit added to student " + student.getName() + " with student number "
+        // Updated loan with new new deposit within code
+        for (int i = 0; i < collegeCreditUnion.getStudents().size(); i++) {
+            if (collegeCreditUnion.getStudents().get(i).getStudentNumber().equals(studentNumber)) {
+                collegeCreditUnion.getStudents().get(i).setLoan(loan);
+                break;
+            }
+        }
+
+        if (totalLoanDeposits + amount == loanAmount) {
+            totalLoanDeposits += amount;
+            return "Loan Deposit added by student " + student.getName()
+                    + " with student number " + student.getStudentNumber()
+                    + "\nTotal loan deposits: " + totalLoanDeposits
+                    + "\nLoan Deposit Details: " + loanDeposit.toString()
+                    + "\nLoan has already fully paid by student\nYou are now eligible to remove loan from the system!";
+        }
+
+        return "Loan Deposit added by student " + student.getName() + " with student number "
                 + student.getStudentNumber()
-                + "\nLoan Deposit Details " + loanDeposit.toString();
+                + "\nLoan Deposit Details " + loanDeposit.toString() + "\nTotal loan deposits: "
+                + totalLoanDeposits + "\nBalance remaining: " + (loanAmount - totalLoanDeposits);
     }
 
     @GET
@@ -228,6 +303,10 @@ public class CollegeCreditUnionService {
         }
         // Variables
         Loan loan = student.getLoan();
+
+        if (loan.getLoanDeposits() == null) {
+            return "Student with student number " + studentNumber + " does not have any loan deposits";
+        }
         // return loan deposits
         return "Loan Deposits: " + loan.getLoanDeposits();
     }
