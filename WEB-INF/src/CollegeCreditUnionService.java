@@ -303,8 +303,7 @@ public class CollegeCreditUnionService {
         }
         // Variables
         Loan loan = student.getLoan();
-
-        if (loan.getLoanDeposits() == null) {
+        if (loan.getLoanDeposits() == null || loan.getLoanDeposits().isEmpty()) {
             return "Student with student number " + studentNumber + " does not have any loan deposits";
         }
         // return loan deposits
