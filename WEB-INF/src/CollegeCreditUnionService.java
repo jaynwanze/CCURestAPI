@@ -272,11 +272,12 @@ public class CollegeCreditUnionService {
             }
         }
 
-        if (totalLoanDeposits + amount == loanAmount) {
-            totalLoanDeposits += amount;
+        double currentTotalLoanDeposits = totalLoanDeposits + amount;
+
+        if (currentTotalLoanDeposits == loanAmount) {
             return "Loan Deposit added by student " + student.getName()
                     + " with student number " + student.getStudentNumber()
-                    + "\nTotal loan deposits: " + totalLoanDeposits
+                    + "\nTotal loan deposits: " + currentTotalLoanDeposits
                     + "\nLoan Deposit Details: " + loanDeposit.toString()
                     + "\nLoan has already fully paid by student\nYou are now eligible to remove loan from the system!";
         }
@@ -284,7 +285,7 @@ public class CollegeCreditUnionService {
         return "Loan Deposit added by student " + student.getName() + " with student number "
                 + student.getStudentNumber()
                 + "\nLoan Deposit Details " + loanDeposit.toString() + "\nTotal loan deposits: "
-                + totalLoanDeposits + "\nBalance remaining: " + (loanAmount - totalLoanDeposits);
+                + currentTotalLoanDeposits + "\nBalance remaining: " + (loanAmount - currentTotalLoanDeposits);
     }
 
     @GET
@@ -307,7 +308,8 @@ public class CollegeCreditUnionService {
             return "Student with student number " + studentNumber + " does not have any loan deposits";
         }
         // return loan deposits
-        return "Loan Deposits: " + loan.getLoanDeposits();
+        return "Student " + student.getName() + " with student number: " + studentNumber + "\nLoan Deposits: "
+                + loan.getLoanDeposits();
     }
 
 }
